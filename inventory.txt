@@ -1,0 +1,4 @@
+PRODUCT,Teclado,100,25.5
+PRODUCT,Laptop,200,789
+PRODUCT,Mouse,100,7.8
+SERVICE,Seguro de Vida,85.9

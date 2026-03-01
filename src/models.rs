@@ -12,11 +12,11 @@ pub struct Service {
 
 pub trait Salable {
     fn name(&self) -> &str;
-    fn quantity(&self) -> u32; // para leer la cantidad actual
+    fn quantity(&self) -> u32; // read current quantity
     fn price(&self) -> f64;
     fn is_service(&self) -> bool;
-    fn add_amount(&mut self, n: u32); // para incrementar el stock
-    fn make_sale(&mut self, cant: u32) -> Result<(), StoryError>; // Ahora acepta 'cant'
+    fn add_amount(&mut self, n: u32); // increase stock
+    fn make_sale(&mut self, cant: u32) -> Result<(), StoryError>; // accepts quantity to sell
     fn a_csv(&self) -> String;
     fn set_price(&mut self, price: f64);
 }
@@ -35,7 +35,7 @@ impl Salable for Product {
         false
     }
     fn add_amount(&mut self, n: u32) {
-        self.quantity += n; // Incrementa el stock
+        self.quantity += n; // increase stock
     }
     fn make_sale(&mut self, cant: u32) -> Result<(), StoryError> {
         if self.quantity == 0 {
@@ -44,7 +44,7 @@ impl Salable for Product {
             self.quantity -= cant;
             Ok(())
         } else {
-            // Error detallado: Solo hay X disponibles
+            // Detailed error: only X units are available
             Err(StoryError::InsufficientStocks {
                 name: self.name.clone(),
                 available: self.quantity,
@@ -74,8 +74,8 @@ impl Salable for Service {
     }
     fn add_amount(&mut self, _n: u32) {}
     fn make_sale(&mut self, _cant: u32) -> Result<(), StoryError> {
-        // Los servicios siempre tienen "stock" infinito
-        println!("Servicio contratado exitosamente");
+        // Services always have "infinite" stock
+        println!("Service purchased successfully");
         Ok(())
     }
     fn a_csv(&self) -> String {

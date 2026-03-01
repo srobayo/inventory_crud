@@ -4,7 +4,7 @@ use std::error::Error;
 use std::io;
 use std::io::Write;
 
-// Funciòn auxiliar para no repetir còdigo de lectura
+// Helper function to avoid repeating input-reading logic
 fn read_input() -> Result<String, Box<dyn Error>> {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
@@ -13,29 +13,29 @@ fn read_input() -> Result<String, Box<dyn Error>> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut my_store = Inventory::new();
-    // Intentamos cargar al iniciar
+    // Try loading persisted inventory at startup
     let _ = my_store.load_from_file();
 
     loop {
-        println!("\n --- GESTOR DE INVENTARIO PRO ---");
-        println!("1. Listar productos");
-        println!("2. Agregar Producto");
-        println!("3. Agregar Servicio");
-        println!("4. Vender ìtem");
-        println!("5. Actualizar Precio");
-        println!("6. Eliminar ìtem");
-        println!("7. Actualizar Stock");
-        println!("8. Salir");
-        println!("Seleccione una opciòn: ");
-        io::stdout().flush()?; // Asegura que el texto se imprima antes de pedir entrada
+        println!("\n --- PRO INVENTORY MANAGER ---");
+        println!("1. List items");
+        println!("2. Add product");
+        println!("3. Add service");
+        println!("4. Sell item");
+        println!("5. Update price");
+        println!("6. Delete item");
+        println!("7. Update stock");
+        println!("8. Exit");
+        println!("Choose an option: ");
+        io::stdout().flush()?; // Ensure text is printed before reading input
 
         let option = read_input()?;
         match option.as_str() {
             "1" => {
-                println!("\n--- INVENTARIO ACTUAL ---");
+                println!("\n--- CURRENT INVENTORY ---");
                 for item in &my_store.list {
                     println!(
-                        "-- {}: (Cantidad: {}, Precio: {})",
+                        "-- {}: (Quantity: {}, Price: {})",
                         item.name(),
                         item.quantity(),
                         item.price()
@@ -43,11 +43,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             "2" => {
-                println!("Nombre del productos");
+                println!("Product name");
                 let name = read_input()?;
-                println!("Cantidad inicial");
+                println!("Initial quantity");
                 let quantity: u32 = read_input()?.parse().unwrap_or(0);
-                println!("Precio inicial");
+                println!("Initial price");
                 let price = read_input()?.parse::<f64>().unwrap_or(0.0);
                 my_store.add_and_save(Box::new(Product {
                     name,
@@ -56,16 +56,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }))?;
             }
             "3" => {
-                println!("Nombre del Servicio");
+                println!("Service name");
                 let description = read_input()?;
-                println!("Precio del Servicio");
+                println!("Service price");
                 let price = read_input()?.parse::<f64>().unwrap_or(0.0);
                 my_store.add_and_save(Box::new(Service { description, price }))?;
             }
             "4" => {
-                println!("¿Què desea vender?");
+                println!("What item do you want to sell?");
                 let name = read_input()?;
-                println!("¿Cuàntas unidades?");
+                println!("How many units?");
                 let quantity: u32 = read_input()?.parse().unwrap_or(1);
 
                 if let Err(e) = my_store.process_sale_and_save(&name, quantity) {
@@ -73,31 +73,31 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
             "5" => {
-                println!("Nombre del ìtem:");
+                println!("Item name:");
                 let name = read_input()?;
-                println!("Nuevo precio:");
+                println!("New price:");
                 let price: f64 = read_input()?.parse().unwrap_or(0.0);
                 my_store.update_price_and_save(&name, price)?;
             }
             "6" => {
-                println!("Nombre del ìtem a eliminar:");
+                println!("Item name to delete:");
                 let name = read_input()?;
                 my_store.delete_and_save(&name)?;
             }
             "7" => {
-                println!("Nombre del producto a reponer:");
+                println!("Product name to restock:");
                 let name = read_input()?;
-                println!("Cantidad a agregar:");
+                println!("Quantity to add:");
                 let quantity: u32 = read_input()?.parse().unwrap_or(0);
                 if let Err(e) = my_store.restock_and_save(&name, quantity) {
                     println!("Error: {}", e);
                 }
             }
             "8" => {
-                println!("¡Hasta luego!");
+                println!("Goodbye!");
                 break;
             }
-            _ => println!(" Opciòn no vàlida, intente de nuevo."),
+            _ => println!(" Invalid option, please try again."),
         }
     }
 

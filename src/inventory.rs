@@ -14,7 +14,7 @@ impl Inventory {
         Inventory { list: vec![] }
     }
 
-    // C
+    // Create
     pub fn add_and_save(&mut self, item: Box<dyn Salable>) -> Result<(), Box<dyn Error>> {
         if item.price() <= 0.0 {
             return Err(Box::new(StoryError::InvalidPrice));
@@ -25,35 +25,32 @@ impl Inventory {
         let price_to_set = item.price();
         let is_incoming_service = item.is_service();
 
-        // Buscamos si ya existe un ìtem con ese noombre
+        // Check whether an item with the same name already exists
         if let Some(existing_item) = self.list.iter_mut().find(|i| i.name() == new_name) {
             if existing_item.is_service() && is_incoming_service {
                 existing_item.set_price(price_to_set);
-                println!("El servicio '{}' ya existía. Precio actualizado.", new_name);
+                println!("Service '{}' already existed. Price updated.", new_name);
             } else {
-                // Sì existe! Solo incrementamos su cantidad
+                // If it exists, increase stock only
                 existing_item.add_amount(quantity_to_add);
-                println!(
-                    "El producto '{}' ya existìa. Cantidad actualizada.",
-                    new_name
-                );
+                println!("Product '{}' already existed. Quantity updated.", new_name);
             }
         } else {
-            // No existe, lo añadimos como nuevo
+            // If it does not exist, add it as new
             self.list.push(item);
-            println!("Nuevo producto '{}' añadido al inventario.", new_name);
+            println!("New product '{}' added to inventory.", new_name);
         }
-        // Sobrescribimos el archivo con la lista actualizada.as
+        // Overwrite the file with the updated in-memory list
         self.save_all()
     }
 
-    // R
+    // Read
     pub fn load_from_file(&mut self) -> Result<(), Box<dyn Error>> {
         self.list = load_items(INVENTORY_FILE)?;
         Ok(())
     }
 
-    // -U- -D-
+    // Update/Delete persistence
     pub fn save_all(&self) -> Result<(), Box<dyn Error>> {
         save_items(INVENTORY_FILE, &self.list)?;
         Ok(())
@@ -64,20 +61,20 @@ impl Inventory {
         name: &str,
         quantity: u32,
     ) -> Result<(), Box<dyn Error>> {
-        // 1. Buscamso el item
+        // 1. Find the item
         let item = self
             .list
             .iter_mut()
             .find(|i| i.name() == name)
             .ok_or(StoryError::ProductNotFound)?;
 
-        // 2. Intentamos la venta
+        // 2. Attempt the sale
         item.make_sale(quantity)?;
 
-        // 3. Persistimos el cambio en el archivo
+        // 3. Persist changes to file
         self.save_all()?;
 
-        println!("Venta de {} unidades de '{}' completada. ", quantity, name);
+        println!("Sale of {} units of '{}' completed.", quantity, name);
 
         Ok(())
     }
@@ -99,7 +96,7 @@ impl Inventory {
 
         item.set_price(new_price);
         self.save_all()?;
-        println!("Precio de '{}' actualizado a ${:.2} ", name, new_price);
+        println!("Price of '{}' updated to ${:.2}.", name, new_price);
         Ok(())
     }
 
@@ -121,27 +118,27 @@ impl Inventory {
 
         self.save_all()?;
         println!(
-            "Stock de '{}' incrementado en {}. Total actual: {}",
+            "Stock for '{}' increased by {}. Current total: {}",
             name, quantity, updated_quantity
         );
         Ok(())
     }
 
-    // Busca un ìtem por nombre, lo elimina de la lista y actualiza el archivo.
+    // Find an item by name, remove it from memory, and update the file.
     pub fn delete_and_save(&mut self, name: &str) -> Result<(), Box<dyn Error>> {
         let initial_len = self.list.len();
 
-        // Conservamos solo los que NO coincidan con el nombre.
+        // Keep only those that do NOT match the target name.
         self.list.retain(|item| item.name() != name);
 
         if self.list.len() < initial_len {
-            println!("Item '{}' eliminado de la memoria. ", name);
+            println!("Item '{}' removed from memory.", name);
 
-            // Paso crucial: Guardamos la lista actualizada para que en el archivo refleje el borrado
+            // Critical step: persist so the file reflects the deletion
             self.save_all()?;
-            println!("Archivo 'inventory.txt' actualizado con èxito.");
+            println!("File 'inventory.txt' updated successfully.");
         } else {
-            println!("No se encontrò el ìtem '{}' para eliminarlo ", name);
+            println!("Item '{}' was not found for deletion.", name);
         }
 
         Ok(())

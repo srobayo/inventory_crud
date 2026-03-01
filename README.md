@@ -1,210 +1,208 @@
-# Inventory CRUD (Rust) - Explicado Para Principiantes
+# Inventory CRUD (Rust) - Beginner Friendly Guide
 
-Este proyecto es una app de consola (CLI) para manejar inventario de:
-- Productos (tienen stock).
-- Servicios (stock infinito, solo precio).
+This project is a CLI (terminal) application to manage inventory for:
+- Products (finite stock).
+- Services (infinite stock, price only).
 
-Los datos se guardan en `inventory.txt`.
+Data is persisted in `inventory.txt`.
 
-## 1. Qué hace el sistema
+## 1. What the system does
 
-Desde el menú puedes:
-- Listar ítems.
-- Agregar producto.
-- Agregar servicio.
-- Vender ítem.
-- Actualizar precio.
-- Eliminar ítem.
-- Reponer stock (solo productos).
+From the menu, you can:
+- List items.
+- Add a product.
+- Add a service.
+- Sell an item.
+- Update price.
+- Delete an item.
+- Restock (products only).
 
-## 2. Estructura del proyecto (fácil de entender)
+## 2. Project structure (easy to follow)
 
 - `src/main.rs`
-  - Solo interfaz CLI.
-  - Lee lo que escribe el usuario y llama a la lógica.
+  - CLI layer only.
+  - Reads user input and calls business logic.
 - `src/inventory.rs`
-  - Reglas del negocio.
-  - Aquí vive la “inteligencia” del sistema.
+  - Business rules and use cases.
+  - Core behavior of the application.
 - `src/models.rs`
-  - Tipos principales (`Product`, `Service`) y trait `Salable`.
+  - Domain models (`Product`, `Service`) and the `Salable` trait.
 - `src/errors.rs`
-  - Errores del dominio (`StoryError`).
+  - Domain-specific errors (`StoryError`).
 - `src/storage.rs`
-  - Guardar/cargar desde archivo.
+  - File persistence (load/save).
 - `src/lib.rs`
-  - Expone los módulos para usar el proyecto como librería.
+  - Exposes modules as a library API.
 
-## 3. Flujo completo de una operación
+## 3. End-to-end flow of an operation
 
-Ejemplo: vender un producto.
+Example: selling an item.
 
-1. El usuario elige “Vender ítem” en `main.rs`.
-2. `main.rs` llama a `process_sale_and_save(...)` en `inventory.rs`.
-3. `inventory.rs` busca el ítem en memoria.
-4. El ítem ejecuta su propia regla de venta (`make_sale`) según su tipo.
-5. Si sale bien, se guarda todo en `inventory.txt`.
+1. User selects "Sell item" in `main.rs`.
+2. `main.rs` calls `process_sale_and_save(...)` in `inventory.rs`.
+3. `inventory.rs` finds the item in memory.
+4. The item applies its own sale logic (`make_sale`) based on its type.
+5. If successful, the updated state is saved into `inventory.txt`.
 
-## 4. Reglas de negocio importantes
+## 4. Important business rules
 
-- Precio inválido: no se permite `<= 0`.
-- Producto:
-  - Si cantidad = 0 -> `OutOfStock`.
-  - Si no alcanza -> `InsufficientStocks`.
-- Servicio:
-  - Se puede vender siempre (stock infinito).
-  - No se puede “reponer stock”.
-- Si agregas un servicio con mismo nombre:
-  - Se actualiza el precio.
+- Invalid prices are rejected (`<= 0`).
+- Product sale:
+  - If stock is `0` -> `OutOfStock`.
+  - If stock is insufficient -> `InsufficientStocks`.
+- Service sale:
+  - Always allowed (infinite stock model).
+  - Cannot be restocked.
+- Adding an existing service by name:
+  - Updates its price.
 
-## 5. Rust aplicado en este proyecto (con lenguaje simple)
+## 5. Rust concepts used in this project (simple explanations)
 
-## 5.1 Trait (polimorfismo)
+## 5.1 Trait-based polymorphism
 
-Qué es:
-- Un trait es como un “contrato” de métodos.
+What it is:
+- A trait is a contract of methods.
 
-Dónde:
-- `Salable` en `models.rs`.
+Where:
+- `Salable` in `models.rs`.
 
-Para qué sirve aquí:
-- `Product` y `Service` comparten interfaz común:
+Why it matters here:
+- `Product` and `Service` share one interface:
   - `name`, `price`, `make_sale`, etc.
-- Así `Inventory` trabaja con ambos sin duplicar lógica.
+- `Inventory` can work with both types without duplicated logic.
 
-## 5.2 Polimorfismo dinámico (`dyn Trait`)
+## 5.2 Dynamic polymorphism (`dyn Trait`)
 
-Qué es:
-- Guardar distintos tipos concretos bajo una misma interfaz.
+What it is:
+- Storing different concrete types behind one shared trait interface.
 
-Dónde:
-- `Vec<Box<dyn Salable>>` en `inventory.rs`.
+Where:
+- `Vec<Box<dyn Salable>>` in `inventory.rs`.
 
-Para qué sirve aquí:
-- La lista puede contener productos y servicios mezclados.
+Why it matters here:
+- The same list can hold products and services together.
 
-## 5.3 Ownership (propiedad)
+## 5.3 Ownership
 
-Qué es:
-- Cada dato en Rust tiene un dueño.
+What it is:
+- Every value in Rust has one owner.
 
-Dónde:
-- `add_and_save` recibe `Box<dyn Salable>` y lo mueve al `Vec`.
+Where:
+- `add_and_save` receives `Box<dyn Salable>` and moves it into the vector.
 
-Para qué sirve aquí:
-- Evita referencias colgantes y gestiona memoria de forma segura.
+Why it matters here:
+- Safe memory management without garbage collection.
 
-## 5.4 Borrowing (préstamos) y mutabilidad
+## 5.4 Borrowing and mutability
 
-Qué es:
-- `&T` presta para leer.
-- `&mut T` presta para modificar.
+What it is:
+- `&T` for read-only access.
+- `&mut T` for mutable access.
 
-Dónde:
-- Métodos de trait:
-  - Lectura con `&self`.
-  - Escritura con `&mut self`.
-- Búsquedas mutables con `iter_mut()`.
+Where:
+- Trait methods use `&self` and `&mut self`.
+- `iter_mut()` is used for in-place item updates.
 
-Para qué sirve aquí:
-- Actualizar stock/precio sin romper reglas de seguridad.
+Why it matters here:
+- You can update stock/price safely with compiler guarantees.
 
-## 5.5 Manejo de errores con `Result` + `?`
+## 5.5 Error handling with `Result` and `?`
 
-Qué es:
-- `Result<T, E>` representa éxito o error.
-- `?` propaga errores sin mucho código repetitivo.
+What it is:
+- `Result<T, E>` models success or failure.
+- `?` propagates errors in a concise way.
 
-Dónde:
-- Casi todos los métodos de `inventory.rs` y `storage.rs`.
+Where:
+- Most methods in `inventory.rs` and `storage.rs`.
 
-Para qué sirve aquí:
-- Si falla lectura de archivo o una validación de negocio, se corta limpio y se informa.
+Why it matters here:
+- File errors and domain validation errors are handled cleanly.
 
-## 5.6 Errores personalizados con `enum`
+## 5.6 Custom domain errors with `enum`
 
-Qué es:
-- Un enum agrupa varios tipos de error de negocio.
+What it is:
+- A strongly-typed list of business errors.
 
-Dónde:
-- `StoryError` en `errors.rs`.
+Where:
+- `StoryError` in `errors.rs`.
 
-Ejemplos reales:
+Examples:
 - `ProductNotFound`
 - `OutOfStock(String)`
 - `InvalidPrice`
 - `NonStockableItem(String)`
 
-Ventaja:
-- Errores tipados y claros, no solo strings sueltos.
+Why it matters here:
+- Clear, explicit, and maintainable error logic.
 
-## 5.7 `Option` -> `Result`
+## 5.7 Converting `Option` into `Result`
 
-Qué es:
-- `.find(...)` devuelve `Option`.
-- `.ok_or(...)` lo convierte a `Result` con error útil.
+What it is:
+- `.find(...)` returns `Option`.
+- `.ok_or(...)` turns missing values into meaningful errors.
 
-Dónde:
-- En búsquedas de ítems en `inventory.rs`.
+Where:
+- Item lookups in `inventory.rs`.
 
-Ventaja:
-- Si no existe el ítem, devuelve `ProductNotFound` explícitamente.
+Why it matters here:
+- Missing items become explicit domain errors (`ProductNotFound`).
 
-## 5.8 `match` (pattern matching)
+## 5.8 Pattern matching (`match`)
 
-Qué es:
-- Comparación por patrones más segura que muchos `if`.
+What it is:
+- A safe and expressive control-flow mechanism.
 
-Dónde:
-- Menú en `main.rs`.
-- Parseo de líneas en `storage.rs` (`PRODUCT` / `SERVICE`).
-- Mensajes de error en `errors.rs` (`Display`).
+Where:
+- CLI menu handling in `main.rs`.
+- Line parsing in `storage.rs` (`PRODUCT` / `SERVICE`).
+- Error formatting in `errors.rs` (`Display` implementation).
 
-## 5.9 Iteradores y closures
+## 5.9 Iterators and closures
 
-Dónde:
+Where:
 - `.find(...)`, `.retain(...)`, `.iter()`, `.iter_mut()`.
 
-Ventaja:
-- Código más expresivo y menos propenso a errores.
+Why it matters:
+- Cleaner and safer collection logic.
 
-## 5.10 Módulos (`mod`) y visibilidad (`pub`)
+## 5.10 Modules and visibility (`pub`)
 
-Qué es:
-- Separar responsabilidades por archivo.
+What it is:
+- Code organized by responsibility in separate modules.
 
-Dónde:
-- `lib.rs` declara módulos públicos.
+Where:
+- `lib.rs` exposes public modules.
 
-Ventaja:
-- Código más mantenible y más fácil de escalar.
+Why it matters:
+- Easier maintenance and easier scaling.
 
-## 6. Decisiones de diseño sobre Service
+## 6. Service design decisions
 
-- `Service` no tiene campo `quantity`.
-- `quantity()` devuelve `0` porque no aplica stock real.
-- `make_sale()` siempre devuelve `Ok(())`.
-- `a_csv()` guarda descripción y precio real.
+- `Service` has no `quantity` field.
+- `quantity()` returns `0` as a non-stock placeholder.
+- `make_sale()` always returns `Ok(())`.
+- `a_csv()` stores real service description and price.
 
-Esto modela correctamente “servicio infinito”.
+This models the "infinite stock service" behavior clearly.
 
-## 7. Comandos para ejecutar
+## 7. Run the project
 
 ```bash
 cargo run
 ```
 
-## 8. Comando para validar compilación
+## 8. Validate compilation
 
 ```bash
 cargo check
 ```
 
-## 9. Mini glosario rápido
+## 9. Quick glossary
 
-- Trait: contrato de métodos.
-- `dyn Trait`: uso dinámico de ese contrato.
-- Ownership: quién “posee” un dato.
-- Borrowing: préstamo temporal de un dato.
-- `Result`: éxito/error tipado.
-- `Option`: valor presente o ausente.
-- `match`: patrón de control de flujo.
+- Trait: behavior contract.
+- `dyn Trait`: dynamic dispatch through a trait object.
+- Ownership: who owns a value.
+- Borrowing: temporary access to a value.
+- `Result`: typed success/error outcome.
+- `Option`: value present/absent.
+- `match`: pattern-based control flow.
